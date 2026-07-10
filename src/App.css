@@ -1,0 +1,104 @@
+.app {
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.app h1 {
+  margin-bottom: 8px;
+}
+
+.app p {
+  color: #666;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  padding: 24px;
+  background-color: #111111;
+  color: #ffffff;
+}
+
+.sidebar h2 {
+  margin-bottom: 32px;
+  color: #29c76f;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar nav p {
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sidebar nav p:hover {
+  background-color: #29c76f;
+  color: #111111;
+}
+
+.conteudo {
+  flex: 1;
+  padding: 32px;
+  background-color: #f4f4f4;
+}
+
+.conteudo h1 {
+  margin-bottom: 8px;
+}
+
+.conteudo p {
+  color: #666666;
+}
+
+.cabecalho-dashboard {
+  margin-bottom: 24px;
+}
+
+.cards-resumo {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.card-resumo {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card-resumo p {
+  margin-bottom: 10px;
+  color: #666666;
+}
+
+.card-resumo strong {
+  font-size: 30px;
+  color: #111111;
+}
+
+@media (max-width: 900px) {
+  .cards-resumo {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .cards-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    width: 190px;
+  }
+}
