@@ -102,3 +102,58 @@
     width: 190px;
   }
 }
+.secao-tabela {
+  margin-top: 32px;
+  padding: 24px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.secao-tabela h2 {
+  margin-bottom: 20px;
+}
+
+.tabela-produtos {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-produtos th,
+.tabela-produtos td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.tabela-produtos th {
+  background-color: #111111;
+  color: #ffffff;
+}
+
+.tabela-produtos tbody tr:hover {
+  background-color: #f2f2f2;
+}
+
+.status {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-ok {
+  background-color: #d7f8e5;
+  color: #138a46;
+}
+
+.status-atencao {
+  background-color: #fff3cd;
+  color: #9a6b00;
+}
+
+.status-comprar {
+  background-color: #f8d7da;
+  color: #b4232c;
+}

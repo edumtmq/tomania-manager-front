@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+
 import './App.css'
 import Sidebar from './components/Sidebar'
 import CardResumo from './components/CardResumo'
+import TabelaProdutos from './components/TabelaProdutos'
 
 function App() {
   const [resumo, setResumo] = useState({
@@ -64,6 +66,8 @@ function App() {
             valor={resumo.produtosComprar}
           />
         </div>
+        <TabelaProdutos />
+        
       </section>
     </main>
   )
