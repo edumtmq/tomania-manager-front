@@ -157,3 +157,11 @@
   background-color: #f8d7da;
   color: #b4232c;
 }
+
+.mensagem-vazia {
+  padding: 20px;
+  text-align: center;
+  color: #666666;
+  background-color: #f7f7f7;
+  border-radius: 8px;
+}

@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar'
 import CardResumo from './components/CardResumo'
 import TabelaProdutos from './components/TabelaProdutos'
 import MovimentacoesRecentes from './components/MovimentacoesRecentes'
+import SugestaoCompras from './components/SugestaoCompras'
 
 function App() {
   const [resumo, setResumo] = useState({
@@ -69,6 +70,7 @@ function App() {
         </div>
         <TabelaProdutos />
         <MovimentacoesRecentes />
+        <SugestaoCompras />
         
       </section>
     </main>
