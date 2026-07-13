@@ -1,8 +1,38 @@
+import { useEffect, useState } from 'react'
 import './App.css'
 import Sidebar from './components/Sidebar'
 import CardResumo from './components/CardResumo'
 
 function App() {
+  const [resumo, setResumo] = useState({
+    totalProdutosAtivos: 0,
+    produtosOk: 0,
+    produtosAtencao: 0,
+    produtosComprar: 0,
+  })
+
+  useEffect(() => {
+    async function carregarResumo() {
+      try {
+        const resposta = await fetch(
+          'http://localhost:8080/dashboard/resumo'
+        )
+
+        if (!resposta.ok) {
+          throw new Error('Não foi possível carregar o resumo')
+        }
+
+        const dados = await resposta.json()
+
+        setResumo(dados)
+      } catch (erro) {
+        console.error('Erro ao carregar resumo:', erro)
+      }
+    }
+
+    carregarResumo()
+  }, [])
+
   return (
     <main className="app">
       <Sidebar />
@@ -14,10 +44,25 @@ function App() {
         </div>
 
         <div className="cards-resumo">
-          <CardResumo titulo="Produtos ativos" valor={10} />
-          <CardResumo titulo="Estoque OK" valor={6} />
-          <CardResumo titulo="Atenção" valor={2} />
-          <CardResumo titulo="Comprar" valor={2} />
+          <CardResumo
+            titulo="Produtos ativos"
+            valor={resumo.totalProdutosAtivos}
+          />
+
+          <CardResumo
+            titulo="Estoque OK"
+            valor={resumo.produtosOk}
+          />
+
+          <CardResumo
+            titulo="Atenção"
+            valor={resumo.produtosAtencao}
+          />
+
+          <CardResumo
+            titulo="Comprar"
+            valor={resumo.produtosComprar}
+          />
         </div>
       </section>
     </main>
