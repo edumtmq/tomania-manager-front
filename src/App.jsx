@@ -4,6 +4,7 @@ import './App.css'
 import Sidebar from './components/Sidebar'
 import CardResumo from './components/CardResumo'
 import TabelaProdutos from './components/TabelaProdutos'
+import MovimentacoesRecentes from './components/MovimentacoesRecentes'
 
 function App() {
   const [resumo, setResumo] = useState({
@@ -67,6 +68,7 @@ function App() {
           />
         </div>
         <TabelaProdutos />
+        <MovimentacoesRecentes />
         
       </section>
     </main>
