@@ -191,3 +191,35 @@
 .botao-principal:hover {
   background-color: #20aa5c;
 }
+
+.acoes-produto {
+  display: flex;
+  gap: 8px;
+}
+
+.botao-editar,
+.botao-inativar {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.botao-editar {
+  background-color: #fff3cd;
+  color: #7a5700;
+}
+
+.botao-editar:hover {
+  background-color: #ffe69c;
+}
+
+.botao-inativar {
+  background-color: #f8d7da;
+  color: #a61e29;
+}
+
+.botao-inativar:hover {
+  background-color: #f1aeb5;
+}

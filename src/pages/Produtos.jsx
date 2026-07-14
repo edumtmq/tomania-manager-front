@@ -63,6 +63,38 @@ function Produtos() {
     setErro(erro.message)
   }
 }
+async function inativarProduto(produtoId, produtoNome) {
+  const confirmou = window.confirm(
+    `Deseja realmente inativar o produto ${produtoNome}?`
+  )
+
+  if (!confirmou) {
+    return
+  }
+
+  try {
+    setErro('')
+
+    const resposta = await fetch(
+      `http://localhost:8080/produtos/${produtoId}`,
+      {
+        method: 'DELETE',
+      }
+    )
+
+    if (!resposta.ok) {
+      throw new Error('Não foi possível inativar o produto')
+    }
+
+    setProdutos((produtosAtuais) =>
+      produtosAtuais.filter(
+        (produto) => produto.id !== produtoId
+      )
+    )
+  } catch (erro) {
+    setErro(erro.message)
+  }
+}
 
   return (
     <section className="conteudo">
@@ -130,25 +162,46 @@ function Produtos() {
                 <th>Estoque atual</th>
                 <th>Estoque mínimo</th>
                 <th>Status</th>
+                <th>Ações</th>
               </tr>
             </thead>
 
             <tbody>
               {produtos.map((produto) => (
-                <tr key={produto.id}>
-                  <td>{produto.nome}</td>
+                 <tr key={produto.id}>
+                 <td>{produto.nome}</td>
                   <td>{produto.estoqueAtual}</td>
                   <td>{produto.estoqueMinimo}</td>
-                  <td>
-                    <span
-                      className={`status status-${produto.status.toLowerCase()}`}
-                    >
-                      {produto.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+
+                    <td>
+                      <span
+                        className={`status status-${produto.status.toLowerCase()}`}
+                      >
+                        {produto.status}
+                      </span>
+                    </td>
+
+                    <td className="acoes-produto">
+                      <button
+                        type="button"
+                        className="botao-editar"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        type="button"
+                        className="botao-inativar"
+                        onClick={() =>
+                          inativarProduto(produto.id, produto.nome)
+                        }
+                      >
+                        Inativar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
           </table>
         )}
       </section>
