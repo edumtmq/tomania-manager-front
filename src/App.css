@@ -170,3 +170,24 @@
   background-color: #f7f7f7;
   border-radius: 8px;
 }
+
+.cabecalho-pagina {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.botao-principal {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  background-color: #29c76f;
+  color: #111111;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.botao-principal:hover {
+  background-color: #20aa5c;
+}
