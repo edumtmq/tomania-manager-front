@@ -8,6 +8,7 @@ function Produtos() {
 
   const [nome, setNome] = useState('')
   const [estoqueMinimo, setEstoqueMinimo] = useState('')
+  const [produtoEditandoId, setProdutoEditandoId] = useState(null)
   
   useEffect(() => {
     async function carregarProdutos() {
@@ -30,12 +31,22 @@ function Produtos() {
     carregarProdutos()
   }, [])
 
-  async function cadastrarProduto(evento) {
+  async function salvarProduto(evento) {
   evento.preventDefault()
 
+  const estaEditando = produtoEditandoId !== null
+
+  const url = estaEditando
+    ? `http://localhost:8080/produtos/${produtoEditandoId}`
+    : 'http://localhost:8080/produtos'
+
+  const metodo = estaEditando ? 'PUT' : 'POST'
+
   try {
-    const resposta = await fetch('http://localhost:8080/produtos', {
-      method: 'POST',
+    setErro('')
+
+    const resposta = await fetch(url, {
+      method: metodo,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -46,23 +57,36 @@ function Produtos() {
     })
 
     if (!resposta.ok) {
-      throw new Error('Não foi possível cadastrar o produto')
+      throw new Error(
+        estaEditando
+          ? 'Não foi possível editar o produto'
+          : 'Não foi possível cadastrar o produto'
+      )
     }
 
-    const produtoCriado = await resposta.json()
+    const produtoSalvo = await resposta.json()
 
-    setProdutos((produtosAtuais) => [
-      ...produtosAtuais,
-      produtoCriado,
-    ])
+    if (estaEditando) {
+      setProdutos((produtosAtuais) =>
+        produtosAtuais.map((produto) =>
+          produto.id === produtoEditandoId
+            ? produtoSalvo
+            : produto
+        )
+      )
+    } else {
+      setProdutos((produtosAtuais) => [
+        ...produtosAtuais,
+        produtoSalvo,
+      ])
+    }
 
-    setNome('')
-    setEstoqueMinimo('')
-    setMostrarFormulario(false)
+    limparFormulario()
   } catch (erro) {
     setErro(erro.message)
   }
 }
+
 async function inativarProduto(produtoId, produtoNome) {
   const confirmou = window.confirm(
     `Deseja realmente inativar o produto ${produtoNome}?`
@@ -96,6 +120,20 @@ async function inativarProduto(produtoId, produtoNome) {
   }
 }
 
+function iniciarEdicao(produto) {
+  setProdutoEditandoId(produto.id)
+  setNome(produto.nome)
+  setEstoqueMinimo(produto.estoqueMinimo)
+  setMostrarFormulario(true)
+}
+
+function limparFormulario() {
+  setNome('')
+  setEstoqueMinimo('')
+  setProdutoEditandoId(null)
+  setMostrarFormulario(false)
+}
+
   return (
     <section className="conteudo">
       <div className="cabecalho-pagina">
@@ -106,19 +144,27 @@ async function inativarProduto(produtoId, produtoNome) {
 
         <button
           type="button"
-          className="botao-principal"
-          onClick={() => setMostrarFormulario(!mostrarFormulario)}
-        >
-          {mostrarFormulario ? 'Cancelar' : '+ Novo produto'}
+           className="botao-principal"
+          onClick={() => {
+            if (mostrarFormulario) {
+              limparFormulario()
+            } else {
+              setMostrarFormulario(true)
+            }
+            }}
+          >
+            {mostrarFormulario ? 'Cancelar' : '+ Novo produto'}
         </button>
       </div>
 
       {mostrarFormulario && (
   <form
     className="formulario-produto"
-    onSubmit={cadastrarProduto}
+    onSubmit={salvarProduto}
   >
-    <h2>Cadastrar produto</h2>
+    <h2>
+      {produtoEditandoId ? 'Editar produto' : 'Cadastrar produto'}
+    </h2>
 
     <label>
       Nome
@@ -142,7 +188,7 @@ async function inativarProduto(produtoId, produtoNome) {
     </label>
 
     <button type="submit" className="botao-principal">
-      Salvar produto
+      {produtoEditandoId ? 'Salvar alterações' : 'Salvar produto'}
     </button>
   </form>
 )}
@@ -185,6 +231,7 @@ async function inativarProduto(produtoId, produtoNome) {
                       <button
                         type="button"
                         className="botao-editar"
+                        onClick={() => iniciarEdicao(produto)}
                       >
                         Editar
                       </button>
