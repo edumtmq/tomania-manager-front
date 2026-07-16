@@ -1,13 +1,15 @@
+import { NavLink } from 'react-router'
+
 function Sidebar() {
   return (
     <aside className="sidebar">
       <h2>Tomania Manager</h2>
 
       <nav>
-        <p>Dashboard</p>
-        <p>Produtos</p>
-        <p>Movimentações</p>
-        <p>Relatórios</p>
+        <NavLink to="/" end>Dashboard</NavLink>
+        <NavLink to="/produtos">Produtos</NavLink>
+        <NavLink to="/movimentacoes">Movimentações</NavLink>
+        <NavLink to="/relatorios">Relatórios</NavLink>
       </nav>
     </aside>
   )

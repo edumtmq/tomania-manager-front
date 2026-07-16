@@ -19,6 +19,9 @@
   background-color: #111111;
   color: #ffffff;
   flex-shrink: 0;
+
+  position: relative;
+  z-index: 10;
 }
 
 .sidebar h2 {
@@ -30,14 +33,20 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  position: relative;
+  z-index: 11;
 }
 
 .sidebar nav a {
+  display: block;
+  width: 100%;
   padding: 12px;
   border-radius: 6px;
   color: #ffffff;
   text-decoration: none;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .sidebar nav a:hover {
@@ -55,6 +64,9 @@
   min-width: 0;
   padding: 32px;
   background-color: #f4f4f4;
+
+  position: relative;
+  z-index: 1;
 }
 
 .conteudo h1 {
@@ -255,4 +267,125 @@
 
 .botao-reativar:hover {
   background-color: #aeeec9;
+}
+
+.formulario-movimentacao {
+  margin-bottom: 24px;
+  padding: 24px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.formulario-movimentacao h2 {
+  margin-bottom: 20px;
+}
+
+.campos-formulario {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.campos-formulario label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: bold;
+}
+
+.campos-formulario input,
+.campos-formulario select {
+  padding: 12px;
+  border: 1px solid #cccccc;
+  border-radius: 7px;
+  background-color: #ffffff;
+}
+
+.campos-formulario input:focus,
+.campos-formulario select:focus {
+  border-color: #29c76f;
+  outline: none;
+}
+
+.campos-formulario select:disabled {
+  background-color: #eeeeee;
+  cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .campos-formulario {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formulario-filtros {
+  margin-bottom: 24px;
+  padding: 24px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cabecalho-filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.campos-filtros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.campos-filtros label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: bold;
+}
+
+.campos-filtros input,
+.campos-filtros select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cccccc;
+  border-radius: 7px;
+  background-color: #ffffff;
+}
+
+.campos-filtros input:focus,
+.campos-filtros select:focus {
+  border-color: #29c76f;
+  outline: none;
+}
+
+.botao-limpar {
+  padding: 9px 14px;
+  border: 1px solid #cccccc;
+  border-radius: 7px;
+  background-color: #ffffff;
+  color: #444444;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.botao-limpar:hover {
+  background-color: #eeeeee;
+}
+
+@media (max-width: 1100px) {
+  .campos-filtros {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .campos-filtros {
+    grid-template-columns: 1fr;
+  }
 }
