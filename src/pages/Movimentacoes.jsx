@@ -5,19 +5,30 @@ function Movimentacoes() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
 
+  const [produtos, setProdutos] = useState([])
+
   const [mostrarFormulario, setMostrarFormulario] =
     useState(false)
 
-  const [produtos, setProdutos] = useState([])
+  const [mostrarEntradaLote, setMostrarEntradaLote] =
+    useState(false)
 
-  // Campos da nova movimentação
   const [produtoId, setProdutoId] = useState('')
   const [tipo, setTipo] = useState('')
   const [motivo, setMotivo] = useState('')
   const [quantidade, setQuantidade] = useState('')
   const [responsavel, setResponsavel] = useState('')
 
-  // Campos dos filtros
+  const [responsavelLote, setResponsavelLote] =
+    useState('')
+
+  const [itensLote, setItensLote] = useState([
+    {
+      produtoId: '',
+      quantidade: '',
+    },
+  ])
+
   const [filtroProdutoId, setFiltroProdutoId] =
     useState('')
 
@@ -130,7 +141,6 @@ function Movimentacoes() {
             mensagemErro = dadosErro.mensagem
           }
         } catch {
-          // Mantém a mensagem padrão.
         }
 
         throw new Error(mensagemErro)
@@ -149,6 +159,118 @@ function Movimentacoes() {
       setQuantidade('')
       setResponsavel('')
       setMostrarFormulario(false)
+    } catch (erro) {
+      setErro(erro.message)
+    }
+  }
+
+  function atualizarItemLote(indice, campo, valor) {
+    setItensLote((itensAtuais) =>
+      itensAtuais.map((item, itemIndice) =>
+        itemIndice === indice
+          ? {
+              ...item,
+              [campo]: valor,
+            }
+          : item
+      )
+    )
+  }
+
+  function adicionarItemLote() {
+    setItensLote((itensAtuais) => [
+      ...itensAtuais,
+      {
+        produtoId: '',
+        quantidade: '',
+      },
+    ])
+  }
+
+  function removerItemLote(indice) {
+    setItensLote((itensAtuais) =>
+      itensAtuais.filter(
+        (_, itemIndice) => itemIndice !== indice
+      )
+    )
+  }
+
+  async function salvarEntradaLote(evento) {
+    evento.preventDefault()
+
+    const produtosSelecionados = itensLote.map(
+      (item) => item.produtoId
+    )
+
+    const possuiProdutoDuplicado =
+      new Set(produtosSelecionados).size !==
+      produtosSelecionados.length
+
+    if (possuiProdutoDuplicado) {
+      setErro(
+        'Não selecione o mesmo produto mais de uma vez'
+      )
+
+      return
+    }
+
+    try {
+      setErro('')
+
+      const itensParaEnviar = itensLote.map(
+        (item) => ({
+          produtoId: Number(item.produtoId),
+          quantidade: Number(item.quantidade),
+          responsavel: responsavelLote.trim(),
+        })
+      )
+
+      const resposta = await fetch(
+        'http://localhost:8080/movimentacoes/entrada-lote',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json',
+          },
+
+          body: JSON.stringify(itensParaEnviar),
+        }
+      )
+
+      if (!resposta.ok) {
+        let mensagemErro =
+          'Não foi possível registrar a entrada em lote'
+
+        try {
+          const dadosErro = await resposta.json()
+
+          if (dadosErro.mensagem) {
+            mensagemErro = dadosErro.mensagem
+          }
+        } catch {
+        }
+
+        throw new Error(mensagemErro)
+      }
+
+      const novasMovimentacoes =
+        await resposta.json()
+
+      setMovimentacoes((movimentacoesAtuais) => [
+        ...novasMovimentacoes,
+        ...movimentacoesAtuais,
+      ])
+
+      setItensLote([
+        {
+          produtoId: '',
+          quantidade: '',
+        },
+      ])
+
+      setResponsavelLote('')
+      setMostrarEntradaLote(false)
     } catch (erro) {
       setErro(erro.message)
     }
@@ -208,7 +330,6 @@ function Movimentacoes() {
             mensagemErro = dadosErro.mensagem
           }
         } catch {
-          // Mantém a mensagem padrão.
         }
 
         throw new Error(mensagemErro)
@@ -262,18 +383,151 @@ function Movimentacoes() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="botao-principal"
-          onClick={() =>
-            setMostrarFormulario(!mostrarFormulario)
-          }
-        >
-          {mostrarFormulario
-            ? 'Cancelar'
-            : '+ Nova movimentação'}
-        </button>
+        <div className="acoes-cabecalho">
+          <button
+            type="button"
+            className="botao-secundario"
+            onClick={() => {
+              setMostrarEntradaLote(!mostrarEntradaLote)
+              setMostrarFormulario(false)
+              setErro('')
+            }}
+          >
+            {mostrarEntradaLote
+              ? 'Cancelar lote'
+              : 'Entrada em lote'}
+          </button>
+
+          <button
+            type="button"
+            className="botao-principal"
+            onClick={() => {
+              setMostrarFormulario(!mostrarFormulario)
+              setMostrarEntradaLote(false)
+              setErro('')
+            }}
+          >
+            {mostrarFormulario
+              ? 'Cancelar'
+              : '+ Nova movimentação'}
+          </button>
+        </div>
       </div>
+
+      {erro && (
+        <p className="mensagem-erro">
+          {erro}
+        </p>
+      )}
+
+      {mostrarEntradaLote && (
+        <form
+          className="formulario-movimentacao"
+          onSubmit={salvarEntradaLote}
+        >
+          <h2>Registrar entrada em lote</h2>
+
+          <label className="campo-responsavel-lote">
+            Responsável
+
+            <input
+              type="text"
+              value={responsavelLote}
+              onChange={(evento) =>
+                setResponsavelLote(
+                  evento.target.value
+                )
+              }
+              required
+            />
+          </label>
+
+          <div className="itens-lote">
+            {itensLote.map((item, indice) => (
+              <div
+                className="item-lote"
+                key={indice}
+              >
+                <label>
+                  Produto
+
+                  <select
+                    value={item.produtoId}
+                    onChange={(evento) =>
+                      atualizarItemLote(
+                        indice,
+                        'produtoId',
+                        evento.target.value
+                      )
+                    }
+                    required
+                  >
+                    <option value="">
+                      Selecione um produto
+                    </option>
+
+                    {produtos.map((produto) => (
+                      <option
+                        key={produto.id}
+                        value={produto.id}
+                      >
+                        {produto.nome}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Quantidade
+
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantidade}
+                    onChange={(evento) =>
+                      atualizarItemLote(
+                        indice,
+                        'quantidade',
+                        evento.target.value
+                      )
+                    }
+                    required
+                  />
+                </label>
+
+                {itensLote.length > 1 && (
+                  <button
+                    type="button"
+                    className="botao-inativar"
+                    onClick={() =>
+                      removerItemLote(indice)
+                    }
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="acoes-lote">
+            <button
+              type="button"
+              className="botao-secundario"
+              onClick={adicionarItemLote}
+            >
+              + Adicionar produto
+            </button>
+
+            <button
+              type="submit"
+              className="botao-principal"
+            >
+              Registrar entradas
+            </button>
+          </div>
+        </form>
+      )}
 
       {mostrarFormulario && (
         <form
@@ -505,12 +759,6 @@ function Movimentacoes() {
           <p>Carregando movimentações...</p>
         )}
 
-        {erro && (
-          <p className="mensagem-erro">
-            {erro}
-          </p>
-        )}
-
         {!carregando &&
           !erro &&
           movimentacoes.length === 0 && (
@@ -520,7 +768,6 @@ function Movimentacoes() {
           )}
 
         {!carregando &&
-          !erro &&
           movimentacoes.length > 0 && (
             <table className="tabela-produtos">
               <thead>
