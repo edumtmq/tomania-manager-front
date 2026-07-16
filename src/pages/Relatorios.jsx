@@ -5,48 +5,88 @@ function Relatorios() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [dias, setDias] = useState('7')
+  const [produtos, setProdutos] = useState([])
+  const [produtoId, setProdutoId] = useState('')
 
   useEffect(() => {
-    carregarRelatorio(7)
+    carregarRelatorio(7, '')
   }, [])
 
-  async function carregarRelatorio(periodo) {
+  useEffect(() => {
+  async function carregarProdutos() {
     try {
-      setErro('')
-      setCarregando(true)
-
       const resposta = await fetch(
-        `http://localhost:8080/relatorios/produtos-movimentacao?dias=${periodo}`
+        'http://localhost:8080/produtos'
       )
 
       if (!resposta.ok) {
-        let mensagemErro =
-          'Não foi possível carregar o relatório'
-
-        try {
-          const dadosErro = await resposta.json()
-
-          if (dadosErro.mensagem) {
-            mensagemErro = dadosErro.mensagem
-          }
-        } catch {
-        }
-
-        throw new Error(mensagemErro)
+        throw new Error(
+          'Não foi possível carregar os produtos'
+        )
       }
 
       const dados = await resposta.json()
-      setRelatorios(dados)
+      setProdutos(dados)
     } catch (erro) {
       setErro(erro.message)
-    } finally {
-      setCarregando(false)
     }
   }
 
+  carregarProdutos()
+}, [])
+
+  async function carregarRelatorio(
+  periodo,
+  produtoSelecionado
+) {
+  try {
+    setErro('')
+    setCarregando(true)
+
+    const parametros = new URLSearchParams()
+
+    parametros.append('dias', periodo)
+
+    if (produtoSelecionado) {
+      parametros.append(
+        'produtoId',
+        produtoSelecionado
+      )
+    }
+
+    const resposta = await fetch(
+      `http://localhost:8080/relatorios/produtos-movimentacao?${parametros.toString()}`
+    )
+
+    if (!resposta.ok) {
+      let mensagemErro =
+        'Não foi possível carregar o relatório'
+
+      try {
+        const dadosErro = await resposta.json()
+
+        if (dadosErro.mensagem) {
+          mensagemErro = dadosErro.mensagem
+        }
+      } catch {
+        // Mantém a mensagem padrão.
+      }
+
+      throw new Error(mensagemErro)
+    }
+
+    const dados = await resposta.json()
+    setRelatorios(dados)
+  } catch (erro) {
+    setErro(erro.message)
+  } finally {
+    setCarregando(false)
+  }
+}
+
   function aplicarPeriodo(evento) {
     evento.preventDefault()
-    carregarRelatorio(Number(dias))
+    carregarRelatorio(Number(dias), produtoId)
   }
 
   function formatarNumero(valor) {
@@ -72,6 +112,29 @@ function Relatorios() {
         className="formulario-relatorio"
         onSubmit={aplicarPeriodo}
       >
+        <label>
+          Produto
+
+          <select
+            value={produtoId}
+            onChange={(evento) =>
+              setProdutoId(evento.target.value)
+            }
+          >
+            <option value="">
+              Todos os produtos
+            </option>
+
+            {produtos.map((produto) => (
+              <option
+                key={produto.id}
+                value={produto.id}
+              >
+                {produto.nome}
+              </option>
+            ))}
+          </select>
+        </label>
         <label>
           Período analisado
 
