@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 
 import CardResumo from '../components/CardResumo'
 import TabelaProdutos from '../components/TabelaProdutos'
@@ -12,6 +13,12 @@ function Dashboard() {
     produtosAtencao: 0,
     produtosComprar: 0,
   })
+  const dataAtual = new Date().toLocaleDateString('pt-BR', {
+  weekday: 'long',
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+  })
 
   useEffect(() => {
     async function carregarResumo() {
@@ -21,13 +28,18 @@ function Dashboard() {
         )
 
         if (!resposta.ok) {
-          throw new Error('Não foi possível carregar o resumo')
+          throw new Error(
+            'Não foi possível carregar o resumo'
+          )
         }
 
         const dados = await resposta.json()
         setResumo(dados)
       } catch (erro) {
-        console.error('Erro ao carregar resumo:', erro)
+        console.error(
+          'Erro ao carregar resumo:',
+          erro
+        )
       }
     }
 
@@ -37,34 +49,101 @@ function Dashboard() {
   return (
     <section className="conteudo">
       <div className="cabecalho-dashboard">
-        <h1>Dashboard</h1>
-        <p>Controle de estoque da Tomania</p>
+        <div>
+          <h1>Dashboard</h1>
+
+          <p>
+             Visão geral do estoque da Tomania
+          </p>
+         </div>
+
+         <span className="data-dashboard">
+            {dataAtual}
+         </span>
       </div>
 
       <div className="cards-resumo">
         <CardResumo
           titulo="Produtos ativos"
           valor={resumo.totalProdutosAtivos}
+          tipo="total"
+          icone="🛍️"
         />
 
         <CardResumo
           titulo="Estoque OK"
           valor={resumo.produtosOk}
+          tipo="ok"
+          icone="✓"
         />
 
         <CardResumo
           titulo="Atenção"
           valor={resumo.produtosAtencao}
+          tipo="atencao"
+          icone="⚠️"
         />
 
         <CardResumo
-          titulo="Comprar"
+          titulo="Comprar urgente"
           valor={resumo.produtosComprar}
+          tipo="comprar"
+          icone="!"
         />
       </div>
 
       <TabelaProdutos />
+
+      <section className="secao-acoes-rapidas">
+        <div className="titulo-secao">
+          <div>
+            <h2>Ações rápidas</h2>
+
+            <p>
+              Registre entradas e saídas do estoque
+            </p>
+          </div>
+        </div>
+
+        <div className="acoes-rapidas">
+          <Link
+            to="/movimentacoes"
+            className="acao-rapida acao-entrada"
+          >
+            <span className="icone-acao">
+              +
+            </span>
+
+            <div>
+              <strong>Registrar entrada</strong>
+
+              <p>
+                Adicionar produtos ao estoque
+              </p>
+            </div>
+          </Link>
+
+          <Link
+            to="/movimentacoes"
+            className="acao-rapida acao-saida"
+          >
+            <span className="icone-acao">
+              −
+            </span>
+
+            <div>
+              <strong>Registrar saída</strong>
+
+              <p>
+                Registrar produção, perda ou validade
+              </p>
+            </div>
+          </Link>
+        </div>
+      </section>
+
       <MovimentacoesRecentes />
+
       <SugestaoCompras />
     </section>
   )
