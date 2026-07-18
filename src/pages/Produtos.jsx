@@ -4,24 +4,41 @@ function Produtos() {
   const [produtos, setProdutos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [sucesso, setSucesso] = useState('')
 
-  const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const [mostrarFormulario, setMostrarFormulario] =
+    useState(false)
+
   const [nome, setNome] = useState('')
   const [estoqueMinimo, setEstoqueMinimo] = useState('')
-  const [produtoEditandoId, setProdutoEditandoId] = useState(null)
 
-  const [mostrarInativos, setMostrarInativos] = useState(false)
-  const [produtosInativos, setProdutosInativos] = useState([])
+  const [produtoEditandoId, setProdutoEditandoId] =
+    useState(null)
+
+  const [mostrarInativos, setMostrarInativos] =
+    useState(false)
+
+  const [produtosInativos, setProdutosInativos] =
+    useState([])
+
+  const [busca, setBusca] = useState('')
+
+  const [filtroStatus, setFiltroStatus] =
+    useState('TODOS')
 
   useEffect(() => {
     async function carregarProdutos() {
       try {
+        setErro('')
+
         const resposta = await fetch(
           'http://localhost:8080/produtos'
         )
 
         if (!resposta.ok) {
-          throw new Error('Não foi possível carregar os produtos')
+          throw new Error(
+            'Não foi possível carregar os produtos'
+          )
         }
 
         const dados = await resposta.json()
@@ -36,10 +53,92 @@ function Produtos() {
     carregarProdutos()
   }, [])
 
+  useEffect(() => {
+    if (!sucesso) {
+      return
+    }
+
+    const temporizador = setTimeout(() => {
+      setSucesso('')
+    }, 3000)
+
+    return () => clearTimeout(temporizador)
+  }, [sucesso])
+
+  const rotulosStatus = {
+    OK: 'OK',
+    ATENCAO: 'Atenção',
+    COMPRAR: 'Comprar',
+  }
+
+  const prioridadeStatus = {
+    COMPRAR: 1,
+    ATENCAO: 2,
+    OK: 3,
+  }
+
+  const produtosFiltrados = produtos
+    .filter((produto) => {
+      const nomeCorresponde = produto.nome
+        .toLowerCase()
+        .includes(busca.toLowerCase().trim())
+
+      const statusCorresponde =
+        filtroStatus === 'TODOS' ||
+        produto.status === filtroStatus
+
+      return nomeCorresponde && statusCorresponde
+    })
+    .sort((produtoA, produtoB) => {
+      const diferencaPrioridade =
+        prioridadeStatus[produtoA.status] -
+        prioridadeStatus[produtoB.status]
+
+      if (diferencaPrioridade !== 0) {
+        return diferencaPrioridade
+      }
+
+      return produtoA.nome.localeCompare(
+        produtoB.nome,
+        'pt-BR'
+      )
+    })
+
+  const resumoProdutos = {
+    total: produtos.length,
+
+    ok: produtos.filter(
+      (produto) => produto.status === 'OK'
+    ).length,
+
+    atencao: produtos.filter(
+      (produto) => produto.status === 'ATENCAO'
+    ).length,
+
+    comprar: produtos.filter(
+      (produto) => produto.status === 'COMPRAR'
+    ).length,
+  }
+
+  const produtosInativosFiltrados =
+    produtosInativos
+      .filter((produto) =>
+        produto.nome
+          .toLowerCase()
+          .includes(busca.toLowerCase().trim())
+      )
+      .sort((produtoA, produtoB) =>
+        produtoA.nome.localeCompare(
+          produtoB.nome,
+          'pt-BR'
+        )
+      )
+
   async function salvarProduto(evento) {
     evento.preventDefault()
 
-    const estaEditando = produtoEditandoId !== null
+    const estaEditando =
+      produtoEditandoId !== null
 
     const url = estaEditando
       ? `http://localhost:8080/produtos/${produtoEditandoId}`
@@ -49,14 +148,17 @@ function Produtos() {
 
     try {
       setErro('')
+      setSucesso('')
 
       const resposta = await fetch(url, {
         method: metodo,
+
         headers: {
           'Content-Type': 'application/json',
         },
+
         body: JSON.stringify({
-          nome: nome,
+          nome: nome.trim(),
           estoqueMinimo: Number(estoqueMinimo),
         }),
       })
@@ -86,13 +188,22 @@ function Produtos() {
         ])
       }
 
+      setSucesso(
+        estaEditando
+          ? 'Produto atualizado com sucesso.'
+          : 'Produto cadastrado com sucesso.'
+      )
+
       limparFormulario()
     } catch (erro) {
       setErro(erro.message)
     }
   }
 
-  async function inativarProduto(produtoId, produtoNome) {
+  async function inativarProduto(
+    produtoId,
+    produtoNome
+  ) {
     const confirmou = window.confirm(
       `Deseja realmente inativar o produto ${produtoNome}?`
     )
@@ -103,6 +214,7 @@ function Produtos() {
 
     try {
       setErro('')
+      setSucesso('')
 
       const resposta = await fetch(
         `http://localhost:8080/produtos/${produtoId}`,
@@ -112,13 +224,33 @@ function Produtos() {
       )
 
       if (!resposta.ok) {
-        throw new Error('Não foi possível inativar o produto')
+        throw new Error(
+          'Não foi possível inativar o produto'
+        )
       }
+
+      const produtoInativado = produtos.find(
+        (produto) => produto.id === produtoId
+      )
 
       setProdutos((produtosAtuais) =>
         produtosAtuais.filter(
           (produto) => produto.id !== produtoId
         )
+      )
+
+      if (mostrarInativos && produtoInativado) {
+        setProdutosInativos((produtosAtuais) => [
+          ...produtosAtuais,
+          {
+            ...produtoInativado,
+            ativo: false,
+          },
+        ])
+      }
+
+      setSucesso(
+        `Produto ${produtoNome} inativado com sucesso.`
       )
     } catch (erro) {
       setErro(erro.message)
@@ -130,6 +262,13 @@ function Produtos() {
     setNome(produto.nome)
     setEstoqueMinimo(produto.estoqueMinimo)
     setMostrarFormulario(true)
+    setErro('')
+    setSucesso('')
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    })
   }
 
   function limparFormulario() {
@@ -167,52 +306,71 @@ function Produtos() {
     }
   }
 
-async function reativarProduto(produtoId, produtoNome) {
-  const confirmou = window.confirm(
-    `Deseja realmente reativar o produto ${produtoNome}?`
-  )
-
-  if (!confirmou) {
-    return
-  }
-
-  try {
-    setErro('')
-
-    const resposta = await fetch(
-      `http://localhost:8080/produtos/${produtoId}/ativar`,
-      {
-        method: 'PATCH',
-      }
+  async function reativarProduto(
+    produtoId,
+    produtoNome
+  ) {
+    const confirmou = window.confirm(
+      `Deseja realmente reativar o produto ${produtoNome}?`
     )
 
-    if (!resposta.ok) {
-      throw new Error('Não foi possível reativar o produto')
+    if (!confirmou) {
+      return
     }
 
-    const produtoReativado = await resposta.json()
+    try {
+      setErro('')
+      setSucesso('')
 
-    setProdutosInativos((produtosAtuais) =>
-      produtosAtuais.filter(
-        (produto) => produto.id !== produtoId
+      const resposta = await fetch(
+        `http://localhost:8080/produtos/${produtoId}/ativar`,
+        {
+          method: 'PATCH',
+        }
       )
-    )
 
-    setProdutos((produtosAtuais) => [
-      ...produtosAtuais,
-      produtoReativado,
-    ])
-  } catch (erro) {
-    setErro(erro.message)
+      if (!resposta.ok) {
+        throw new Error(
+          'Não foi possível reativar o produto'
+        )
+      }
+
+      const produtoReativado =
+        await resposta.json()
+
+      setProdutosInativos((produtosAtuais) =>
+        produtosAtuais.filter(
+          (produto) => produto.id !== produtoId
+        )
+      )
+
+      setProdutos((produtosAtuais) => [
+        ...produtosAtuais,
+        produtoReativado,
+      ])
+
+      setSucesso(
+        `Produto ${produtoNome} reativado com sucesso.`
+      )
+    } catch (erro) {
+      setErro(erro.message)
+    }
   }
-}
+
+  function limparBuscaEFiltros() {
+    setBusca('')
+    setFiltroStatus('TODOS')
+  }
 
   return (
     <section className="conteudo">
       <div className="cabecalho-pagina">
         <div>
           <h1>Produtos</h1>
-          <p>Gerenciamento dos produtos do estoque</p>
+
+          <p>
+            Gerenciamento dos produtos do estoque
+          </p>
         </div>
 
         <div className="acoes-cabecalho">
@@ -234,6 +392,8 @@ async function reativarProduto(produtoId, produtoNome) {
                 limparFormulario()
               } else {
                 setMostrarFormulario(true)
+                setErro('')
+                setSucesso('')
               }
             }}
           >
@@ -243,6 +403,98 @@ async function reativarProduto(produtoId, produtoNome) {
           </button>
         </div>
       </div>
+
+      <div className="cards-resumo cards-produtos">
+        <button
+          type="button"
+          className={`card-resumo card-total card-filtro ${
+            filtroStatus === 'TODOS'
+              ? 'card-filtro-ativo'
+              : ''
+          }`}
+          onClick={() => setFiltroStatus('TODOS')}
+        >
+          <div className="card-resumo-topo">
+            <p>Total de produtos</p>
+
+            <span className="card-resumo-icone">
+              📦
+            </span>
+          </div>
+
+          <strong>{resumoProdutos.total}</strong>
+        </button>
+
+        <button
+          type="button"
+          className={`card-resumo card-ok card-filtro ${
+            filtroStatus === 'OK'
+              ? 'card-filtro-ativo'
+              : ''
+          }`}
+          onClick={() => setFiltroStatus('OK')}
+        >
+          <div className="card-resumo-topo">
+            <p>Estoque OK</p>
+
+            <span className="card-resumo-icone">
+              ✓
+            </span>
+          </div>
+
+          <strong>{resumoProdutos.ok}</strong>
+        </button>
+
+        <button
+          type="button"
+          className={`card-resumo card-atencao card-filtro ${
+            filtroStatus === 'ATENCAO'
+              ? 'card-filtro-ativo'
+              : ''
+          }`}
+          onClick={() =>
+            setFiltroStatus('ATENCAO')
+          }
+        >
+          <div className="card-resumo-topo">
+            <p>Atenção</p>
+
+            <span className="card-resumo-icone">
+              ⚠️
+            </span>
+          </div>
+
+          <strong>{resumoProdutos.atencao}</strong>
+        </button>
+
+        <button
+          type="button"
+          className={`card-resumo card-comprar card-filtro ${
+            filtroStatus === 'COMPRAR'
+              ? 'card-filtro-ativo'
+              : ''
+          }`}
+          onClick={() =>
+            setFiltroStatus('COMPRAR')
+          }
+        >
+          <div className="card-resumo-topo">
+            <p>Comprar urgente</p>
+
+            <span className="card-resumo-icone">
+              !
+            </span>
+          </div>
+
+          <strong>{resumoProdutos.comprar}</strong>
+        </button>
+      </div>
+
+      {sucesso && (
+        <p className="mensagem-sucesso">
+          ✅ {sucesso}
+        </p>
+      )}
 
       {mostrarFormulario && (
         <form
@@ -255,30 +507,38 @@ async function reativarProduto(produtoId, produtoNome) {
               : 'Cadastrar produto'}
           </h2>
 
-          <label>
-            Nome
-            <input
-              type="text"
-              value={nome}
-              onChange={(evento) =>
-                setNome(evento.target.value)
-              }
-              required
-            />
-          </label>
+          <div className="campos-produto">
+            <label>
+              Nome do produto
 
-          <label>
-            Estoque mínimo
-            <input
-              type="number"
-              min="1"
-              value={estoqueMinimo}
-              onChange={(evento) =>
-                setEstoqueMinimo(evento.target.value)
-              }
-              required
-            />
-          </label>
+              <input
+                type="text"
+                value={nome}
+                placeholder="Ex.: Pão de Queijo"
+                onChange={(evento) =>
+                  setNome(evento.target.value)
+                }
+                required
+              />
+            </label>
+
+            <label>
+              Estoque mínimo
+
+              <input
+                type="number"
+                min="1"
+                value={estoqueMinimo}
+                placeholder="Ex.: 5"
+                onChange={(evento) =>
+                  setEstoqueMinimo(
+                    evento.target.value
+                  )
+                }
+                required
+              />
+            </label>
+          </div>
 
           <button
             type="submit"
@@ -291,114 +551,239 @@ async function reativarProduto(produtoId, produtoNome) {
         </form>
       )}
 
+      <section className="filtros-produtos">
+        <div className="campo-busca-produto">
+          <label htmlFor="busca-produto">
+            Buscar produto
+          </label>
+
+          <input
+            id="busca-produto"
+            type="search"
+            value={busca}
+            placeholder="Digite o nome do produto..."
+            onChange={(evento) =>
+              setBusca(evento.target.value)
+            }
+          />
+        </div>
+
+        <div className="campo-filtro-status">
+          <label htmlFor="filtro-status">
+            Status
+          </label>
+
+          <select
+            id="filtro-status"
+            value={filtroStatus}
+            onChange={(evento) =>
+              setFiltroStatus(evento.target.value)
+            }
+          >
+            <option value="TODOS">
+              Todos os status
+            </option>
+
+            <option value="OK">
+              Estoque OK
+            </option>
+
+            <option value="ATENCAO">
+              Atenção
+            </option>
+
+            <option value="COMPRAR">
+              Comprar
+            </option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          className="botao-limpar"
+          onClick={limparBuscaEFiltros}
+        >
+          Limpar filtros
+        </button>
+      </section>
+
+      {erro && (
+        <p className="mensagem-erro">
+          {erro}
+        </p>
+      )}
+
       <section className="secao-tabela">
-        <h2>Produtos ativos</h2>
+        <div className="cabecalho-tabela-produtos">
+          <div>
+            <h2>Produtos ativos</h2>
 
-        {carregando && <p>Carregando produtos...</p>}
+            <p>
+              {produtosFiltrados.length}{' '}
+              {produtosFiltrados.length === 1
+                ? 'produto encontrado'
+                : 'produtos encontrados'}
+            </p>
+          </div>
+        </div>
 
-        {erro && (
-          <p className="mensagem-erro">{erro}</p>
+        {carregando && (
+          <p>Carregando produtos...</p>
         )}
 
-        {!carregando && !erro && (
-          <table className="tabela-produtos">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Estoque atual</th>
-                <th>Estoque mínimo</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
+        {!carregando &&
+          produtosFiltrados.length === 0 && (
+            <p className="mensagem-vazia">
+              Nenhum produto corresponde aos filtros
+              selecionados.
+            </p>
+          )}
 
-            <tbody>
-              {produtos.map((produto) => (
-                <tr key={produto.id}>
-                  <td>{produto.nome}</td>
-                  <td>{produto.estoqueAtual}</td>
-                  <td>{produto.estoqueMinimo}</td>
+        {!carregando &&
+          produtosFiltrados.length > 0 && (
+            <div className="tabela-responsiva">
+              <table className="tabela-produtos">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Estoque atual</th>
+                    <th>Estoque mínimo</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
 
-                  <td>
-                    <span
-                      className={`status status-${produto.status.toLowerCase()}`}
-                    >
-                      {produto.status}
-                    </span>
-                  </td>
+                <tbody>
+                  {produtosFiltrados.map(
+                    (produto) => (
+                      <tr key={produto.id}>
+                        <td>
+                          <strong>
+                            {produto.nome}
+                          </strong>
+                        </td>
 
-                  <td className="acoes-produto">
-                    <button
-                      type="button"
-                      className="botao-editar"
-                      onClick={() =>
-                        iniciarEdicao(produto)
-                      }
-                    >
-                      Editar
-                    </button>
+                        <td>
+                          {produto.estoqueAtual}
+                        </td>
 
-                    <button
-                      type="button"
-                      className="botao-inativar"
-                      onClick={() =>
-                        inativarProduto(
-                          produto.id,
-                          produto.nome
-                        )
-                      }
-                    >
-                      Inativar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                        <td>
+                          {produto.estoqueMinimo}
+                        </td>
+
+                        <td>
+                          <span
+                            className={`status status-${produto.status.toLowerCase()}`}
+                          >
+                            {rotulosStatus[
+                              produto.status
+                            ] || produto.status}
+                          </span>
+                        </td>
+
+                        <td className="acoes-produto">
+                          <button
+                            type="button"
+                            className="botao-editar"
+                            onClick={() =>
+                              iniciarEdicao(produto)
+                            }
+                          >
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
+                            className="botao-inativar"
+                            onClick={() =>
+                              inativarProduto(
+                                produto.id,
+                                produto.nome
+                              )
+                            }
+                          >
+                            Inativar
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
       </section>
 
       {mostrarInativos && (
         <section className="secao-tabela">
-          <h2>Produtos inativos</h2>
+          <div className="cabecalho-tabela-produtos">
+            <div>
+              <h2>Produtos inativos</h2>
 
-          {produtosInativos.length === 0 ? (
+              <p>
+                {produtosInativosFiltrados.length}{' '}
+                {produtosInativosFiltrados.length === 1
+                  ? 'produto encontrado'
+                  : 'produtos encontrados'}
+              </p>
+            </div>
+          </div>
+
+          {produtosInativosFiltrados.length === 0 ? (
             <p className="mensagem-vazia">
-              Nenhum produto inativo encontrado.
+              Nenhum produto inativo corresponde à
+              busca.
             </p>
           ) : (
-            <table className="tabela-produtos">
-              <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>Estoque atual</th>
-                  <th>Estoque mínimo</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {produtosInativos.map((produto) => (
-                  <tr key={produto.id}>
-                    <td>{produto.nome}</td>
-                    <td>{produto.estoqueAtual}</td>
-                    <td>{produto.estoqueMinimo}</td>
-
-                    <td>
-                      <button
-                        type="button"
-                        className="botao-reativar"
-                        onClick={() => 
-                          reativarProduto(produto.id, produto.nome)
-                        }
-                      >
-                        Reativar
-                      </button>
-                    </td>
+            <div className="tabela-responsiva">
+              <table className="tabela-produtos">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Estoque atual</th>
+                    <th>Estoque mínimo</th>
+                    <th>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {produtosInativosFiltrados.map(
+                    (produto) => (
+                      <tr key={produto.id}>
+                        <td>
+                          <strong>
+                            {produto.nome}
+                          </strong>
+                        </td>
+
+                        <td>
+                          {produto.estoqueAtual}
+                        </td>
+
+                        <td>
+                          {produto.estoqueMinimo}
+                        </td>
+
+                        <td>
+                          <button
+                            type="button"
+                            className="botao-reativar"
+                            onClick={() =>
+                              reativarProduto(
+                                produto.id,
+                                produto.nome
+                              )
+                            }
+                          >
+                            Reativar
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       )}

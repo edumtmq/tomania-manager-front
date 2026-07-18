@@ -36,6 +36,9 @@ function Movimentacoes() {
   const [filtroInicio, setFiltroInicio] = useState('')
   const [filtroFim, setFiltroFim] = useState('')
 
+  const [busca, setBusca] = useState('')
+  const [sucesso, setSucesso] = useState('')
+
   useEffect(() => {
     async function carregarMovimentacoes() {
       try {
@@ -86,6 +89,18 @@ function Movimentacoes() {
     carregarProdutos()
   }, [])
 
+  useEffect(() => {
+    if (!sucesso) {
+      return
+    }
+
+    const temporizador = setTimeout(() => {
+      setSucesso('')
+    }, 3000)
+
+    return () => clearTimeout(temporizador)
+  }, [sucesso])
+
   const motivosPorTipo = {
     ENTRADA: [
       'COMPRA',
@@ -101,6 +116,76 @@ function Movimentacoes() {
     ],
   }
 
+  const rotulosTipo = {
+    ENTRADA: 'Entrada',
+    SAIDA: 'Saída',
+  }
+
+  const rotulosMotivo = {
+    COMPRA: 'Compra',
+    PRODUCAO: 'Produção',
+    PERDA: 'Perda',
+    VALIDADE: 'Validade',
+    AJUSTE: 'Ajuste',
+    BONIFICACAO: 'Bonificação',
+  }
+
+  const movimentacoesFiltradas = [...movimentacoes]
+    .filter((movimentacao) => {
+      const termoBusca = busca
+        .toLowerCase()
+        .trim()
+
+      if (!termoBusca) {
+        return true
+      }
+
+      const produtoCorresponde =
+        movimentacao.produtoNome
+          ?.toLowerCase()
+          .includes(termoBusca)
+
+      const responsavelCorresponde =
+        movimentacao.responsavel
+          ?.toLowerCase()
+          .includes(termoBusca)
+
+      return (
+        produtoCorresponde ||
+        responsavelCorresponde
+      )
+    })
+    .sort(
+      (movimentacaoA, movimentacaoB) =>
+        new Date(
+          movimentacaoB.dataMovimentacao
+        ) -
+        new Date(
+          movimentacaoA.dataMovimentacao
+        )
+    )
+
+  const resumoMovimentacoes = {
+    total: movimentacoesFiltradas.length,
+
+    entradas: movimentacoesFiltradas.filter(
+      (movimentacao) =>
+        movimentacao.tipo === 'ENTRADA'
+    ).length,
+
+    saidas: movimentacoesFiltradas.filter(
+      (movimentacao) =>
+        movimentacao.tipo === 'SAIDA'
+    ).length,
+
+    quantidade: movimentacoesFiltradas.reduce(
+      (total, movimentacao) =>
+        total +
+        (Number(movimentacao.quantidade) || 0),
+      0
+    ),
+  }
+
   function formatarData(data) {
     return new Date(data).toLocaleString('pt-BR')
   }
@@ -110,6 +195,7 @@ function Movimentacoes() {
 
     try {
       setErro('')
+      setSucesso('')
 
       const resposta = await fetch(
         'http://localhost:8080/movimentacoes',
@@ -141,12 +227,14 @@ function Movimentacoes() {
             mensagemErro = dadosErro.mensagem
           }
         } catch {
+          // Mantém a mensagem padrão
         }
 
         throw new Error(mensagemErro)
       }
 
-      const novaMovimentacao = await resposta.json()
+      const novaMovimentacao =
+        await resposta.json()
 
       setMovimentacoes((movimentacoesAtuais) => [
         novaMovimentacao,
@@ -159,12 +247,21 @@ function Movimentacoes() {
       setQuantidade('')
       setResponsavel('')
       setMostrarFormulario(false)
+      setSucesso(
+        tipo === 'ENTRADA'
+          ? 'Entrada registrada com sucesso.'
+          : 'Saída registrada com sucesso.'
+      )
     } catch (erro) {
       setErro(erro.message)
     }
   }
 
-  function atualizarItemLote(indice, campo, valor) {
+  function atualizarItemLote(
+    indice,
+    campo,
+    valor
+  ) {
     setItensLote((itensAtuais) =>
       itensAtuais.map((item, itemIndice) =>
         itemIndice === indice
@@ -207,6 +304,7 @@ function Movimentacoes() {
       produtosSelecionados.length
 
     if (possuiProdutoDuplicado) {
+      setSucesso('')
       setErro(
         'Não selecione o mesmo produto mais de uma vez'
       )
@@ -216,6 +314,7 @@ function Movimentacoes() {
 
     try {
       setErro('')
+      setSucesso('')
 
       const itensParaEnviar = itensLote.map(
         (item) => ({
@@ -249,6 +348,7 @@ function Movimentacoes() {
             mensagemErro = dadosErro.mensagem
           }
         } catch {
+          // Mantém a mensagem padrão
         }
 
         throw new Error(mensagemErro)
@@ -271,6 +371,9 @@ function Movimentacoes() {
 
       setResponsavelLote('')
       setMostrarEntradaLote(false)
+      setSucesso(
+        `${novasMovimentacoes.length} entradas registradas com sucesso.`
+      )
     } catch (erro) {
       setErro(erro.message)
     }
@@ -283,6 +386,7 @@ function Movimentacoes() {
       (filtroInicio && !filtroFim) ||
       (!filtroInicio && filtroFim)
     ) {
+      setSucesso('')
       setErro(
         'Informe a data inicial e a data final do período'
       )
@@ -292,6 +396,7 @@ function Movimentacoes() {
 
     try {
       setErro('')
+      setSucesso('')
       setCarregando(true)
 
       const parametros = new URLSearchParams()
@@ -330,6 +435,7 @@ function Movimentacoes() {
             mensagemErro = dadosErro.mensagem
           }
         } catch {
+          // Mantém a mensagem padrão
         }
 
         throw new Error(mensagemErro)
@@ -345,11 +451,13 @@ function Movimentacoes() {
   }
 
   async function limparFiltros() {
+    setBusca('')
     setFiltroProdutoId('')
     setFiltroTipo('')
     setFiltroInicio('')
     setFiltroFim('')
     setErro('')
+    setSucesso('')
     setCarregando(true)
 
     try {
@@ -388,9 +496,12 @@ function Movimentacoes() {
             type="button"
             className="botao-secundario"
             onClick={() => {
-              setMostrarEntradaLote(!mostrarEntradaLote)
+              setMostrarEntradaLote(
+                !mostrarEntradaLote
+              )
               setMostrarFormulario(false)
               setErro('')
+              setSucesso('')
             }}
           >
             {mostrarEntradaLote
@@ -402,9 +513,12 @@ function Movimentacoes() {
             type="button"
             className="botao-principal"
             onClick={() => {
-              setMostrarFormulario(!mostrarFormulario)
+              setMostrarFormulario(
+                !mostrarFormulario
+              )
               setMostrarEntradaLote(false)
               setErro('')
+              setSucesso('')
             }}
           >
             {mostrarFormulario
@@ -413,6 +527,70 @@ function Movimentacoes() {
           </button>
         </div>
       </div>
+
+      <div className="cards-resumo cards-movimentacoes">
+        <div className="card-resumo card-total">
+          <div className="card-resumo-topo">
+            <p>Total de registros</p>
+
+            <span className="card-resumo-icone">
+              🔄
+            </span>
+          </div>
+
+          <strong>
+            {resumoMovimentacoes.total}
+          </strong>
+        </div>
+
+        <div className="card-resumo card-ok">
+          <div className="card-resumo-topo">
+            <p>Entradas</p>
+
+            <span className="card-resumo-icone">
+              +
+            </span>
+          </div>
+
+          <strong>
+            {resumoMovimentacoes.entradas}
+          </strong>
+        </div>
+
+        <div className="card-resumo card-comprar">
+          <div className="card-resumo-topo">
+            <p>Saídas</p>
+
+            <span className="card-resumo-icone">
+              −
+            </span>
+          </div>
+
+          <strong>
+            {resumoMovimentacoes.saidas}
+          </strong>
+        </div>
+
+        <div className="card-resumo card-atencao">
+          <div className="card-resumo-topo">
+            <p>Quantidade movimentada</p>
+
+            <span className="card-resumo-icone">
+              ∑
+            </span>
+          </div>
+
+          <strong>
+            {resumoMovimentacoes.quantidade}
+          </strong>
+        </div>
+      </div>
+
+      {sucesso && (
+        <p className="mensagem-sucesso">
+          ✅ {sucesso}
+        </p>
+      )}
 
       {erro && (
         <p className="mensagem-erro">
@@ -609,7 +787,9 @@ function Movimentacoes() {
                         key={motivoDisponivel}
                         value={motivoDisponivel}
                       >
-                        {motivoDisponivel}
+                        {rotulosMotivo[
+                          motivoDisponivel
+                        ] || motivoDisponivel}
                       </option>
                     )
                   )}
@@ -667,6 +847,22 @@ function Movimentacoes() {
           >
             Limpar filtros
           </button>
+        </div>
+
+        <div className="campo-busca-movimentacao">
+          <label htmlFor="busca-movimentacao">
+            Buscar no histórico
+          </label>
+
+          <input
+            id="busca-movimentacao"
+            type="search"
+            value={busca}
+            placeholder="Buscar por produto ou responsável..."
+            onChange={(evento) =>
+              setBusca(evento.target.value)
+            }
+          />
         </div>
 
         <div className="campos-filtros">
@@ -753,68 +949,90 @@ function Movimentacoes() {
       </form>
 
       <section className="secao-tabela">
-        <h2>Histórico de movimentações</h2>
+        <div className="cabecalho-tabela-produtos">
+          <div>
+            <h2>Histórico de movimentações</h2>
+
+            <p>
+              {movimentacoesFiltradas.length}{' '}
+              {movimentacoesFiltradas.length === 1
+                ? 'movimentação encontrada'
+                : 'movimentações encontradas'}
+            </p>
+          </div>
+        </div>
 
         {carregando && (
           <p>Carregando movimentações...</p>
         )}
 
         {!carregando &&
-          !erro &&
-          movimentacoes.length === 0 && (
+          movimentacoesFiltradas.length === 0 && (
             <p className="mensagem-vazia">
               Nenhuma movimentação encontrada.
             </p>
           )}
 
         {!carregando &&
-          movimentacoes.length > 0 && (
-            <table className="tabela-produtos">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Produto</th>
-                  <th>Tipo</th>
-                  <th>Motivo</th>
-                  <th>Quantidade</th>
-                  <th>Responsável</th>
-                </tr>
-              </thead>
+          movimentacoesFiltradas.length > 0 && (
+            <div className="tabela-responsiva">
+              <table className="tabela-produtos">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Produto</th>
+                    <th>Tipo</th>
+                    <th>Motivo</th>
+                    <th>Quantidade</th>
+                    <th>Responsável</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {movimentacoes.map(
-                  (movimentacao) => (
-                    <tr key={movimentacao.id}>
-                      <td>
-                        {formatarData(
-                          movimentacao.dataMovimentacao
-                        )}
-                      </td>
+                <tbody>
+                  {movimentacoesFiltradas.map(
+                    (movimentacao) => (
+                      <tr key={movimentacao.id}>
+                        <td>
+                          {formatarData(
+                            movimentacao.dataMovimentacao
+                          )}
+                        </td>
 
-                      <td>
-                        {movimentacao.produtoNome}
-                      </td>
+                        <td>
+                          <strong>
+                            {movimentacao.produtoNome}
+                          </strong>
+                        </td>
 
-                      <td>
-                        {movimentacao.tipo}
-                      </td>
+                        <td>
+                          <span
+                            className={`tipo-movimentacao tipo-${movimentacao.tipo.toLowerCase()}`}
+                          >
+                            {rotulosTipo[
+                              movimentacao.tipo
+                            ] || movimentacao.tipo}
+                          </span>
+                        </td>
 
-                      <td>
-                        {movimentacao.motivo}
-                      </td>
+                        <td>
+                          {rotulosMotivo[
+                            movimentacao.motivo
+                          ] || movimentacao.motivo}
+                        </td>
 
-                      <td>
-                        {movimentacao.quantidade}
-                      </td>
+                        <td>
+                          {movimentacao.quantidade}
+                        </td>
 
-                      <td>
-                        {movimentacao.responsavel}
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
+                        <td>
+                          {movimentacao.responsavel}
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
       </section>
     </section>
