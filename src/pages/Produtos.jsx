@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import produtoService from '../services/produtoService'
 
 function Produtos() {
   const [produtos, setProdutos] = useState([])
@@ -31,17 +32,8 @@ function Produtos() {
       try {
         setErro('')
 
-        const resposta = await fetch(
-          'http://localhost:8080/produtos'
-        )
+        const dados = await produtoService.listar()
 
-        if (!resposta.ok) {
-          throw new Error(
-            'Não foi possível carregar os produtos'
-          )
-        }
-
-        const dados = await resposta.json()
         setProdutos(dados)
       } catch (erro) {
         setErro(erro.message)
@@ -140,38 +132,24 @@ function Produtos() {
     const estaEditando =
       produtoEditandoId !== null
 
-    const url = estaEditando
-      ? `http://localhost:8080/produtos/${produtoEditandoId}`
-      : 'http://localhost:8080/produtos'
-
-    const metodo = estaEditando ? 'PUT' : 'POST'
-
     try {
       setErro('')
       setSucesso('')
 
-      const resposta = await fetch(url, {
-        method: metodo,
-
-        headers: {
-          'Content-Type': 'application/json',
-        },
-
-        body: JSON.stringify({
-          nome: nome.trim(),
-          estoqueMinimo: Number(estoqueMinimo),
-        }),
-      })
-
-      if (!resposta.ok) {
-        throw new Error(
-          estaEditando
-            ? 'Não foi possível editar o produto'
-            : 'Não foi possível cadastrar o produto'
-        )
+      const dadosProduto = {
+        nome: nome.trim(),
+        estoqueMinimo: Number(estoqueMinimo),
       }
 
-      const produtoSalvo = await resposta.json()
+      const produtoSalvo = estaEditando
+        ? await produtoService.atualizar(
+            produtoEditandoId,
+            dadosProduto
+        )
+
+        : await produtoService.cadastrar(
+            dadosProduto
+        )  
 
       if (estaEditando) {
         setProdutos((produtosAtuais) =>
@@ -216,18 +194,7 @@ function Produtos() {
       setErro('')
       setSucesso('')
 
-      const resposta = await fetch(
-        `http://localhost:8080/produtos/${produtoId}`,
-        {
-          method: 'DELETE',
-        }
-      )
-
-      if (!resposta.ok) {
-        throw new Error(
-          'Não foi possível inativar o produto'
-        )
-      }
+      await produtoService.inativar(produtoId)
 
       const produtoInativado = produtos.find(
         (produto) => produto.id === produtoId
@@ -287,17 +254,7 @@ function Produtos() {
     try {
       setErro('')
 
-      const resposta = await fetch(
-        'http://localhost:8080/produtos/inativos'
-      )
-
-      if (!resposta.ok) {
-        throw new Error(
-          'Não foi possível carregar os produtos inativos'
-        )
-      }
-
-      const dados = await resposta.json()
+      const dados = await produtoService.listarInativos()
 
       setProdutosInativos(dados)
       setMostrarInativos(true)
@@ -322,21 +279,8 @@ function Produtos() {
       setErro('')
       setSucesso('')
 
-      const resposta = await fetch(
-        `http://localhost:8080/produtos/${produtoId}/ativar`,
-        {
-          method: 'PATCH',
-        }
-      )
-
-      if (!resposta.ok) {
-        throw new Error(
-          'Não foi possível reativar o produto'
-        )
-      }
-
       const produtoReativado =
-        await resposta.json()
+        await produtoService.reativar(produtoId)
 
       setProdutosInativos((produtosAtuais) =>
         produtosAtuais.filter(
