@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import dashboardService from '../services/dashboardService'
 
 function MovimentacoesRecentes() {
   const [movimentacoes, setMovimentacoes] = useState([])
@@ -11,17 +12,10 @@ function MovimentacoesRecentes() {
       try {
         setErro('')
 
-        const resposta = await fetch(
-          'http://localhost:8080/dashboard/movimentacoes-recentes'
-        )
+        const dados =
+          await dashboardService
+            .buscarMovimentacoesRecentes()
 
-        if (!resposta.ok) {
-          throw new Error(
-            'Não foi possível carregar as movimentações recentes'
-          )
-        }
-
-        const dados = await resposta.json()
         setMovimentacoes(dados)
       } catch (erro) {
         setErro(erro.message)
@@ -61,8 +55,12 @@ function MovimentacoesRecentes() {
   const movimentacoesOrdenadas = [...movimentacoes]
     .sort(
       (movimentacaoA, movimentacaoB) =>
-        new Date(movimentacaoB.dataMovimentacao) -
-        new Date(movimentacaoA.dataMovimentacao)
+        new Date(
+          movimentacaoB.dataMovimentacao
+        ) -
+        new Date(
+          movimentacaoA.dataMovimentacao
+        )
     )
     .slice(0, 5)
 
@@ -125,7 +123,8 @@ function MovimentacoesRecentes() {
                     <tr key={movimentacao.id}>
                       <td>
                         {formatarData(
-                          movimentacao.dataMovimentacao
+                          movimentacao
+                            .dataMovimentacao
                         )}
                       </td>
 
@@ -139,7 +138,9 @@ function MovimentacoesRecentes() {
                         <span
                           className={`tipo-movimentacao tipo-${movimentacao.tipo.toLowerCase()}`}
                         >
-                          {rotulosTipo[movimentacao.tipo]}
+                          {rotulosTipo[
+                            movimentacao.tipo
+                          ] || movimentacao.tipo}
                         </span>
                       </td>
 

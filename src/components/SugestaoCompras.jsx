@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import dashboardService from '../services/dashboardService'
 
 function SugestaoCompras() {
   const [produtos, setProdutos] = useState([])
@@ -11,17 +12,10 @@ function SugestaoCompras() {
       try {
         setErro('')
 
-        const resposta = await fetch(
-          'http://localhost:8080/dashboard/sugestao-compras'
-        )
+        const dados =
+          await dashboardService
+            .buscarSugestaoCompras()
 
-        if (!resposta.ok) {
-          throw new Error(
-            'Não foi possível carregar as sugestões de compra'
-          )
-        }
-
-        const dados = await resposta.json()
         setProdutos(dados)
       } catch (erro) {
         setErro(erro.message)
@@ -35,7 +29,8 @@ function SugestaoCompras() {
 
   function calcularQuantidadeCompra(produto) {
     return Math.max(
-      produto.estoqueMinimo - produto.estoqueAtual,
+      produto.estoqueMinimo -
+        produto.estoqueAtual,
       0
     )
   }
@@ -80,7 +75,9 @@ function SugestaoCompras() {
       </div>
 
       {carregando && (
-        <p>Carregando sugestões de compra...</p>
+        <p>
+          Carregando sugestões de compra...
+        </p>
       )}
 
       {erro && (
@@ -118,38 +115,46 @@ function SugestaoCompras() {
               </thead>
 
               <tbody>
-                {produtosOrdenados.map((produto) => {
-                  const urgencia =
-                    obterUrgencia(produto)
+                {produtosOrdenados.map(
+                  (produto) => {
+                    const urgencia =
+                      obterUrgencia(produto)
 
-                  return (
-                    <tr key={produto.id}>
-                      <td>
-                        <strong>{produto.nome}</strong>
-                      </td>
+                    return (
+                      <tr key={produto.id}>
+                        <td>
+                          <strong>
+                            {produto.nome}
+                          </strong>
+                        </td>
 
-                      <td>{produto.estoqueAtual}</td>
+                        <td>
+                          {produto.estoqueAtual}
+                        </td>
 
-                      <td>{produto.estoqueMinimo}</td>
+                        <td>
+                          {produto.estoqueMinimo}
+                        </td>
 
-                      <td>
-                        <strong className="quantidade-compra">
-                          {calcularQuantidadeCompra(
-                            produto
-                          )}
-                        </strong>
-                      </td>
+                        <td>
+                          <strong className="quantidade-compra">
+                            {calcularQuantidadeCompra(
+                              produto
+                            )}
+                          </strong>
+                        </td>
 
-                      <td>
-                        <span
-                          className={`urgencia-compra ${urgencia.classe}`}
-                        >
-                          {urgencia.texto}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
+                        <td>
+                          <span
+                            className={`urgencia-compra ${urgencia.classe}`}
+                          >
+                            {urgencia.texto}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  }
+                )}
               </tbody>
             </table>
           </div>

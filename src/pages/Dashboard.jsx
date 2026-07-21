@@ -5,6 +5,7 @@ import CardResumo from '../components/CardResumo'
 import TabelaProdutos from '../components/TabelaProdutos'
 import MovimentacoesRecentes from '../components/MovimentacoesRecentes'
 import SugestaoCompras from '../components/SugestaoCompras'
+import dashboardService from '../services/dashboardService'
 
 function Dashboard() {
   const [resumo, setResumo] = useState({
@@ -13,33 +14,34 @@ function Dashboard() {
     produtosAtencao: 0,
     produtosComprar: 0,
   })
-  const dataAtual = new Date().toLocaleDateString('pt-BR', {
-  weekday: 'long',
-  day: '2-digit',
-  month: 'long',
-  year: 'numeric',
-  })
+
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+
+  const dataAtual = new Date().toLocaleDateString(
+    'pt-BR',
+    {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }
+  )
 
   useEffect(() => {
     async function carregarResumo() {
       try {
-        const resposta = await fetch(
-          'http://localhost:8080/dashboard/resumo'
-        )
+        setErro('')
+        setCarregando(true)
 
-        if (!resposta.ok) {
-          throw new Error(
-            'Não foi possível carregar o resumo'
-          )
-        }
+        const dados =
+          await dashboardService.buscarResumo()
 
-        const dados = await resposta.json()
         setResumo(dados)
       } catch (erro) {
-        console.error(
-          'Erro ao carregar resumo:',
-          erro
-        )
+        setErro(erro.message)
+      } finally {
+        setCarregando(false)
       }
     }
 
@@ -53,14 +55,24 @@ function Dashboard() {
           <h1>Dashboard</h1>
 
           <p>
-             Visão geral do estoque da Tomania
+            Visão geral do estoque da Tomania
           </p>
-         </div>
+        </div>
 
-         <span className="data-dashboard">
-            {dataAtual}
-         </span>
+        <span className="data-dashboard">
+          {dataAtual}
+        </span>
       </div>
+
+      {erro && (
+        <p className="mensagem-erro">
+          {erro}
+        </p>
+      )}
+
+      {carregando && (
+        <p>Carregando resumo do estoque...</p>
+      )}
 
       <div className="cards-resumo">
         <CardResumo
