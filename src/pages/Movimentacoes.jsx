@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import movimentacaoService from '../services/movimentacaoService'
+import produtoService from '../services/produtoService'
 
 function Movimentacoes() {
   const [movimentacoes, setMovimentacoes] = useState([])
@@ -44,17 +46,9 @@ function Movimentacoes() {
       try {
         setErro('')
 
-        const resposta = await fetch(
-          'http://localhost:8080/movimentacoes'
-        )
+        const dados =
+          await movimentacaoService.listar()
 
-        if (!resposta.ok) {
-          throw new Error(
-            'Não foi possível carregar as movimentações'
-          )
-        }
-
-        const dados = await resposta.json()
         setMovimentacoes(dados)
       } catch (erro) {
         setErro(erro.message)
@@ -69,17 +63,9 @@ function Movimentacoes() {
   useEffect(() => {
     async function carregarProdutos() {
       try {
-        const resposta = await fetch(
-          'http://localhost:8080/produtos'
-        )
+        const dados =
+          await produtoService.listar()
 
-        if (!resposta.ok) {
-          throw new Error(
-            'Não foi possível carregar os produtos'
-          )
-        }
-
-        const dados = await resposta.json()
         setProdutos(dados)
       } catch (erro) {
         setErro(erro.message)
@@ -197,44 +183,18 @@ function Movimentacoes() {
       setErro('')
       setSucesso('')
 
-      const resposta = await fetch(
-        'http://localhost:8080/movimentacoes',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type': 'application/json',
-          },
-
-          body: JSON.stringify({
-            produtoId: Number(produtoId),
-            tipo: tipo,
-            motivo: motivo,
-            quantidade: Number(quantidade),
-            responsavel: responsavel.trim(),
-          }),
-        }
-      )
-
-      if (!resposta.ok) {
-        let mensagemErro =
-          'Não foi possível registrar a movimentação'
-
-        try {
-          const dadosErro = await resposta.json()
-
-          if (dadosErro.mensagem) {
-            mensagemErro = dadosErro.mensagem
-          }
-        } catch {
-          // Mantém a mensagem padrão
-        }
-
-        throw new Error(mensagemErro)
+      const dadosMovimentacao = {
+        produtoId: Number(produtoId),
+        tipo,
+        motivo,
+        quantidade: Number(quantidade),
+        responsavel: responsavel.trim(),
       }
 
       const novaMovimentacao =
-        await resposta.json()
+        await movimentacaoService.registrar(
+          dadosMovimentacao
+        )
 
       setMovimentacoes((movimentacoesAtuais) => [
         novaMovimentacao,
@@ -247,6 +207,7 @@ function Movimentacoes() {
       setQuantidade('')
       setResponsavel('')
       setMostrarFormulario(false)
+
       setSucesso(
         tipo === 'ENTRADA'
           ? 'Entrada registrada com sucesso.'
@@ -324,38 +285,10 @@ function Movimentacoes() {
         })
       )
 
-      const resposta = await fetch(
-        'http://localhost:8080/movimentacoes/entrada-lote',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type': 'application/json',
-          },
-
-          body: JSON.stringify(itensParaEnviar),
-        }
-      )
-
-      if (!resposta.ok) {
-        let mensagemErro =
-          'Não foi possível registrar a entrada em lote'
-
-        try {
-          const dadosErro = await resposta.json()
-
-          if (dadosErro.mensagem) {
-            mensagemErro = dadosErro.mensagem
-          }
-        } catch {
-          // Mantém a mensagem padrão
-        }
-
-        throw new Error(mensagemErro)
-      }
-
       const novasMovimentacoes =
-        await resposta.json()
+        await movimentacaoService.registrarEntradaLote(
+          itensParaEnviar
+        )
 
       setMovimentacoes((movimentacoesAtuais) => [
         ...novasMovimentacoes,
@@ -399,49 +332,18 @@ function Movimentacoes() {
       setSucesso('')
       setCarregando(true)
 
-      const parametros = new URLSearchParams()
+      const filtros = {
+        produtoId: filtroProdutoId,
+        tipo: filtroTipo,
+        inicio: filtroInicio,
+        fim: filtroFim,
+      }
 
-      if (filtroProdutoId) {
-        parametros.append(
-          'produtoId',
-          filtroProdutoId
+      const dados =
+        await movimentacaoService.filtrar(
+          filtros
         )
-      }
 
-      if (filtroTipo) {
-        parametros.append('tipo', filtroTipo)
-      }
-
-      if (filtroInicio) {
-        parametros.append('inicio', filtroInicio)
-      }
-
-      if (filtroFim) {
-        parametros.append('fim', filtroFim)
-      }
-
-      const resposta = await fetch(
-        `http://localhost:8080/movimentacoes/filtro?${parametros.toString()}`
-      )
-
-      if (!resposta.ok) {
-        let mensagemErro =
-          'Não foi possível filtrar as movimentações'
-
-        try {
-          const dadosErro = await resposta.json()
-
-          if (dadosErro.mensagem) {
-            mensagemErro = dadosErro.mensagem
-          }
-        } catch {
-          // Mantém a mensagem padrão
-        }
-
-        throw new Error(mensagemErro)
-      }
-
-      const dados = await resposta.json()
       setMovimentacoes(dados)
     } catch (erro) {
       setErro(erro.message)
@@ -461,17 +363,9 @@ function Movimentacoes() {
     setCarregando(true)
 
     try {
-      const resposta = await fetch(
-        'http://localhost:8080/movimentacoes'
-      )
+      const dados =
+        await movimentacaoService.listar()
 
-      if (!resposta.ok) {
-        throw new Error(
-          'Não foi possível carregar as movimentações'
-        )
-      }
-
-      const dados = await resposta.json()
       setMovimentacoes(dados)
     } catch (erro) {
       setErro(erro.message)
