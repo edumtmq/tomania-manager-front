@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import produtoService from '../services/produtoService'
+import relatorioService from '../services/relatorioService'
 
 function Relatorios() {
   const [relatorios, setRelatorios] = useState([])
@@ -24,17 +26,8 @@ function Relatorios() {
   useEffect(() => {
     async function carregarProdutos() {
       try {
-        const resposta = await fetch(
-          'http://localhost:8080/produtos'
-        )
-
-        if (!resposta.ok) {
-          throw new Error(
-            'Não foi possível carregar os produtos'
-          )
-        }
-
-        const dados = await resposta.json()
+        const dados =
+          await produtoService.listar()
 
         const produtosOrdenados = [...dados].sort(
           (produtoA, produtoB) =>
@@ -92,39 +85,13 @@ function Relatorios() {
       setErro('')
       setCarregando(true)
 
-      const parametros = new URLSearchParams()
+      const dados =
+        await relatorioService
+          .buscarMovimentacoesPorProduto({
+            dias: periodo,
+            produtoId: produtoSelecionado,
+          })
 
-      parametros.append('dias', periodo)
-
-      if (produtoSelecionado) {
-        parametros.append(
-          'produtoId',
-          produtoSelecionado
-        )
-      }
-
-      const resposta = await fetch(
-        `http://localhost:8080/relatorios/produtos-movimentacao?${parametros.toString()}`
-      )
-
-      if (!resposta.ok) {
-        let mensagemErro =
-          'Não foi possível carregar o relatório'
-
-        try {
-          const dadosErro = await resposta.json()
-
-          if (dadosErro.mensagem) {
-            mensagemErro = dadosErro.mensagem
-          }
-        } catch {
-          // Mantém a mensagem padrão.
-        }
-
-        throw new Error(mensagemErro)
-      }
-
-      const dados = await resposta.json()
       setRelatorios(dados)
       setPeriodoAplicado(Number(periodo))
 
